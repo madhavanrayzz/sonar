@@ -1,7 +1,8 @@
-
+# tests/test_calculator.py
 import unittest
 from unittest.mock import patch
 from main import add, subtract, multiply, divide, calculator
+
 
 class TestCalculator(unittest.TestCase):
 
@@ -26,52 +27,77 @@ class TestCalculator(unittest.TestCase):
 
     # ------------------- DIVIDE -------------------
     def test_divide(self):
-        self.assertEqual(divide(10, 2), 5)
+        self.assertEqual(divide(10, 2), 5.0)
         self.assertAlmostEqual(divide(7.5, 2.5), 3.0)
-        self.assertEqual(divide(-10, 2), -5)
-        self.assertEqual(divide(10, -2), -5)
-        self.assertEqual(divide(-10, -2), 5)
+        self.assertEqual(divide(-10, 2), -5.0)
+        self.assertEqual(divide(10, -2), -5.0)
+        self.assertEqual(divide(-10, -2), 5.0)
 
     def test_divide_by_zero(self):
         self.assertEqual(divide(5, 0), "Error: Cannot divide by zero!")
         self.assertEqual(divide(0, 0), "Error: Cannot divide by zero!")
 
-    # ------------------- FULL CALCULATOR INTERACTIVE TEST -------------------
-    @patch('builtins.input', side_effect=['10', '5', '+'])
+    # ------------------- CALCULATOR INTERACTIVE -------------------
+    @patch('builtins.input', side_effect=['10', '5', '+', 'q'])
     @patch('builtins.print')
-    def test_calculator_add(self, mock_print, mock_input):
+    def test_calculator_add_and_quit(self, mock_print, mock_input):
         calculator()
-        mock_print.assert_any_call(15)
+        mock_print.assert_any_call(15.0)
 
-    @patch('builtins.input', side_effect=['10', '5', '-'])
+    @patch('builtins.input', side_effect=['10', '5', '-', 'q'])
     @patch('builtins.print')
     def test_calculator_subtract(self, mock_print, mock_input):
         calculator()
-        mock_print.assert_any_call(5)
+        mock_print.assert_any_call(5.0)
 
-    @patch('builtins.input', side_effect=['10', '5', '*'])
+    @patch('builtins.input', side_effect=['10', '5', '*', 'q'])
     @patch('builtins.print')
     def test_calculator_multiply(self, mock_print, mock_input):
         calculator()
-        mock_print.assert_any_call(50)
+        mock_print.assert_any_call(50.0)
 
-    @patch('builtins.input', side_effect=['10', '5', '/'])
+    @patch('builtins.input', side_effect=['10', '5', '/', 'q'])
     @patch('builtins.print')
     def test_calculator_divide(self, mock_print, mock_input):
         calculator()
         mock_print.assert_any_call(2.0)
 
-    @patch('builtins.input', side_effect=['10', '0', '/'])
+    @patch('builtins.input', side_effect=['10', '0', '/', 'q'])
     @patch('builtins.print')
     def test_calculator_divide_by_zero(self, mock_print, mock_input):
         calculator()
         mock_print.assert_any_call("Error: Cannot divide by zero!")
 
-    @patch('builtins.input', side_effect=['10', '5', '^'])
+    @patch('builtins.input', side_effect=['10', '5', '**', 'q'])
     @patch('builtins.print')
-    def test_calculator_invalid_op(self, mock_print, mock_input):
+    def test_calculator_invalid_operation(self, mock_print, mock_input):
         calculator()
         mock_print.assert_any_call("Invalid operation!")
 
+    @patch('builtins.input', side_effect=['abc', 'q'])
+    @patch('builtins.print')
+    def test_calculator_invalid_number(self, mock_print, mock_input):
+        calculator()
+        mock_print.assert_any_call("Invalid number input!")
+
+    @patch('builtins.input', side_effect=['q'])
+    @patch('builtins.print')
+    def test_calculator_quit_immediately(self, mock_print, mock_input):
+        calculator()
+        mock_print.assert_any_call("Goodbye!")
+
+    @patch('builtins.input', side_effect=['10', 'quit'])
+    @patch('builtins.print')
+    def test_calculator_quit_after_first_number(self, mock_print, mock_input):
+        calculator()
+        mock_print.assert_any_call("Goodbye!")
+
+    @patch('builtins.input', side_effect=['10', '5', 'q'])
+    @patch('builtins.print')
+    def test_calculator_quit_after_second_number(self, mock_print, mock_input):
+        calculator()
+        mock_print.assert_any_call("Goodbye!")
+
+
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)
