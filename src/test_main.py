@@ -1,103 +1,99 @@
-# tests/test_calculator.py
-import unittest
-from unittest.mock import patch
-from main import add, subtract, multiply, divide, calculator
+from fastapi.testclient import TestClient
+
+from src.main import app
 
 
-class TestCalculator(unittest.TestCase):
-
-    # ------------------- ADD -------------------
-    def test_add(self):
-        self.assertEqual(add(3, 4), 7)
-        self.assertEqual(add(-1, 5), 4)
-        self.assertAlmostEqual(add(2.5, 1.2), 3.7)
-
-    # ------------------- SUBTRACT -------------------
-    def test_subtract(self):
-        self.assertEqual(subtract(10, 3), 7)
-        self.assertEqual(subtract(0, 5), -5)
-        self.assertAlmostEqual(subtract(5.5, 2.2), 3.3)
-
-    # ------------------- MULTIPLY -------------------
-    def test_multiply(self):
-        self.assertEqual(multiply(4, 5), 20)
-        self.assertEqual(multiply(-2, 3), -6)
-        self.assertAlmostEqual(multiply(2.5, 2), 5.0)
-        self.assertEqual(multiply(5, 0), 0)
-
-    # ------------------- DIVIDE -------------------
-    def test_divide(self):
-        self.assertEqual(divide(10, 2), 5.0)
-        self.assertAlmostEqual(divide(7.5, 2.5), 3.0)
-        self.assertEqual(divide(-10, 2), -5.0)
-        self.assertEqual(divide(10, -2), -5.0)
-        self.assertEqual(divide(-10, -2), 5.0)
-
-    def test_divide_by_zero(self):
-        self.assertEqual(divide(5, 0), "Error: Cannot divide by zero!")
-        self.assertEqual(divide(0, 0), "Error: Cannot divide by zero!")
-
-    # ------------------- CALCULATOR INTERACTIVE -------------------
-    @patch('builtins.input', side_effect=['10', '5', '+', 'q'])
-    @patch('builtins.print')
-    def test_calculator_add_and_quit(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call(15.0)
-
-    @patch('builtins.input', side_effect=['10', '5', '-', 'q'])
-    @patch('builtins.print')
-    def test_calculator_subtract(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call(5.0)
-
-    @patch('builtins.input', side_effect=['10', '5', '*', 'q'])
-    @patch('builtins.print')
-    def test_calculator_multiply(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call(50.0)
-
-    @patch('builtins.input', side_effect=['10', '5', '/', 'q'])
-    @patch('builtins.print')
-    def test_calculator_divide(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call(2.0)
-
-    @patch('builtins.input', side_effect=['10', '0', '/', 'q'])
-    @patch('builtins.print')
-    def test_calculator_divide_by_zero(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call("Error: Cannot divide by zero!")
-
-    @patch('builtins.input', side_effect=['10', '5', '**', 'q'])
-    @patch('builtins.print')
-    def test_calculator_invalid_operation(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call("Invalid operation!")
-
-    @patch('builtins.input', side_effect=['abc', 'q'])
-    @patch('builtins.print')
-    def test_calculator_invalid_number(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call("Invalid number input!")
-
-    @patch('builtins.input', side_effect=['q'])
-    @patch('builtins.print')
-    def test_calculator_quit_immediately(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call("Goodbye!")
-
-    @patch('builtins.input', side_effect=['10', 'quit'])
-    @patch('builtins.print')
-    def test_calculator_quit_after_first_number(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call("Goodbye!")
-
-    @patch('builtins.input', side_effect=['10', '5', 'q'])
-    @patch('builtins.print')
-    def test_calculator_quit_after_second_number(self, mock_print, mock_input):
-        calculator()
-        mock_print.assert_any_call("Goodbye!")
+client = TestClient(app)
 
 
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
+def test_home():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Welcome to the FastAPI Calculator!"}
+
+
+def test_add():
+    response = client.post("/add", json={"a": 5, "b": 3})
+    assert response.status_code == 200
+    assert response.json()["result"] == 8
+    assert response.json()["operation"] == "add"
+
+
+def test_subtract():
+    response = client.post("/subtract", json={"a": 10, "b": 4})
+    assert response.status_code == 200
+    assert response.json()["result"] == 6
+    assert response.json()["operation"] == "subtract"
+
+
+def test_multiply():
+    response = client.post("/multiply", json={"a": 7, "b": 6})
+    assert response.status_code == 200
+    assert response.json()["result"] == 42
+    assert response.json()["operation"] == "multiply"
+
+
+def test_divide_normal():
+    response = client.post("/divide", json={"a": 20, "b": 5})
+    assert response.status_code == 200
+    assert response.json()["result"] == 4
+    assert response.json()["operation"] == "divide"
+
+
+def test_divide_by_zero():
+    response = client.post("/divide", json={"a": 20, "b": 0})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Cannot divide by zero!"
+
+
+def test_power():
+    response = client.post("/power", json={"a": 2, "b": 3})
+    assert response.status_code == 200
+    assert response.json()["result"] == 8
+    assert response.json()["operation"] == "power"
+
+
+def test_modulus_normal():
+    response = client.post("/modulus", json={"a": 10, "b": 3})
+    assert response.status_code == 200
+    assert response.json()["result"] == 1
+    assert response.json()["operation"] == "modulus"
+
+
+def test_modulus_by_zero():
+    response = client.post("/modulus", json={"a": 10, "b": 0})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Cannot modulo by zero!"
+
+
+def test_floor_divide_normal():
+    response = client.post("/floor_divide", json={"a": 20, "b": 3})
+    assert response.status_code == 200
+    assert response.json()["result"] == 6
+    assert response.json()["operation"] == "floor_divide"
+
+
+def test_floor_divide_by_zero():
+    response = client.post("/floor_divide", json={"a": 20, "b": 0})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Cannot divide by zero!"
+
+
+def test_history_length():
+    # Call some endpoints to populate history
+    client.post("/add", json={"a": 1, "b": 1})
+    client.post("/subtract", json={"a": 2, "b": 1})
+    client.post("/multiply", json={"a": 2, "b": 2})
+    
+    response = client.get("/history")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    # There should be at least 3 operations in history
+    assert len(data) >= 3
+    # Each entry should have keys: operation, a, b, result
+    for entry in data:
+        assert "operation" in entry
+        assert "a" in entry
+        assert "b" in entry
+        assert "result" in entry
